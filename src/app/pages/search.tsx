@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 export function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('relevance');
-  const [gpaRange, setGpaRange] = useState([2.0]);
+  const [gpaRange, setGpaRange] = useState([2.0, 4.0]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [savedScholarships, setSavedScholarships] = useState<string[]>(mockSavedScholarships);
@@ -44,7 +44,7 @@ export function SearchPage() {
                          scholarship.provider.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          scholarship.description.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesGPA = scholarship.gpaRequirement >= gpaRange[0];
+    const matchesGPA = scholarship.gpaRequirement >= gpaRange[0] && scholarship.gpaRequirement <= gpaRange[1];
     const matchesType = selectedTypes.length === 0 || selectedTypes.includes(scholarship.type);
     const matchesCourse = selectedCourses.length === 0 || 
                          selectedCourses.includes('All Programs') ||
@@ -77,8 +77,8 @@ export function SearchPage() {
             className="w-full"
           />
           <div className="flex items-center justify-between text-sm text-[#64748B]">
-            <span>{gpaRange[0].toFixed(1)} and above</span>
-            <span>4.0</span>
+            <span>{gpaRange[0].toFixed(1)}</span>
+            <span>{gpaRange[1].toFixed(1)}</span>
           </div>
         </div>
       </div>

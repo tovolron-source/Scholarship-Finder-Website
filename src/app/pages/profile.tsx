@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { Camera, Save } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -14,10 +15,147 @@ import { mockUser } from '../lib/mock-data';
 import { toast } from 'sonner';
 
 export function ProfilePage() {
+  const navigate = useNavigate();
   const [userData, setUserData] = useState(mockUser);
+  const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = (section: string) => {
-    toast.success(`${section} updated successfully!`);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const storedUser = localStorage.getItem('user');
+        const token = localStorage.getItem('token');
+
+        if (!storedUser || !token) {
+          navigate('/login');
+          return;
+        }
+
+        const user = JSON.parse(storedUser);
+        const userId = user.id;
+
+        // Fetch user data from backend
+        const response = await fetch(`http://localhost:5000/api/auth/user/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            setUserData({
+              id: data.user.id.toString(),
+              fullName: data.user.FullName || user.FullName || 'User',
+              email: data.user.Email || user.Email || '',
+              profilePhoto: data.user.ProfilePhoto,
+              contactNumber: data.user.ContactNumber || '',
+              school: data.user.School || '',
+              course: data.user.Course || '',
+              yearLevel: data.user.YearLevel || '',
+              gpa: data.user.GPA || 0,
+              financialStatus: (data.user.FinancialStatus || 'Middle Income') as any,
+              profileCompletion: data.user.ProfileCompletion || 20
+            });
+          }
+        } else {
+          // Use stored user data as fallback
+          setUserData({
+            id: user.id?.toString() || '1',
+            fullName: user.FullName || 'User',
+            email: user.Email || '',
+            profilePhoto: user.ProfilePhoto,
+            contactNumber: user.ContactNumber || '',
+            school: user.School || '',
+            course: user.Course || '',
+            yearLevel: user.YearLevel || '',
+            gpa: user.GPA || 0,
+            financialStatus: (user.FinancialStatus || 'Middle Income') as any,
+            profileCompletion: user.ProfileCompletion || 20
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        toast.error('Failed to load user data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
+
+  const handleSave = async (section: string) => {
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+
+      if (!storedUser || !token) {
+        navigate('/login');
+        return;
+      }
+
+      const user = JSON.parse(storedUser);
+      const userId = user.id;
+
+      const response = await fetch(`http://localhost:5000/api/auth/user/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fullName: userData.fullName,
+          contactNumber: userData.contactNumber,
+          school: userData.school,
+          course: userData.course,
+          yearLevel: userData.yearLevel,
+          gpa: userData.gpa,
+          financialStatus: userData.financialStatus,
+          profilePhoto: userData.profilePhoto,
+          profileCompletion: Math.min(
+            userData.profileCompletion + 10,
+            100
+          )
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Update stored user data
+          const updatedUser = {
+            ...user,
+            FullName: data.user.FullName,
+            ContactNumber: data.user.ContactNumber,
+            School: data.user.School,
+            Course: data.user.Course,
+            YearLevel: data.user.YearLevel,
+            GPA: data.user.GPA,
+            FinancialStatus: data.user.FinancialStatus,
+            ProfilePhoto: data.user.ProfilePhoto,
+            ProfileCompletion: data.user.ProfileCompletion
+          };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          
+          // Update state
+          setUserData({
+            ...userData,
+            profileCompletion: data.user.ProfileCompletion
+          });
+          
+          toast.success(`${section} updated successfully!`);
+        }
+      } else {
+        toast.error('Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('An error occurred while saving');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -25,7 +163,13 @@ export function ProfilePage() {
       <Navbar />
       
       <main className="flex-1 container mx-auto px-6 py-8 pb-24 md:pb-8">
-        {/* Profile Header */}
+        {loading ? (
+          <div className="flex items-center justify-center h-96">
+            <p className="text-[#64748B]">Loading profile...</p>
+          </div>
+        ) : (
+          <>
+            {/* Profile Header */}
         <div className="mb-8">
           <Card>
             <CardContent className="p-6">
@@ -109,10 +253,11 @@ export function ProfilePage() {
                 <div className="flex justify-end pt-4">
                   <Button 
                     onClick={() => handleSave('Personal information')}
+                    disabled={isSaving}
                     className="bg-[#1A2E5A] hover:bg-[#2A3E6A] text-white"
                   >
                     <Save className="mr-2 h-4 w-4" />
-                    Save Changes
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </div>
               </CardContent>
@@ -197,10 +342,11 @@ export function ProfilePage() {
                 <div className="flex justify-end pt-4">
                   <Button 
                     onClick={() => handleSave('Academic information')}
+                    disabled={isSaving}
                     className="bg-[#1A2E5A] hover:bg-[#2A3E6A] text-white"
                   >
                     <Save className="mr-2 h-4 w-4" />
-                    Save Changes
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </div>
               </CardContent>
@@ -247,16 +393,19 @@ export function ProfilePage() {
                 <div className="flex justify-end pt-4">
                   <Button 
                     onClick={() => handleSave('Financial information')}
+                    disabled={isSaving}
                     className="bg-[#1A2E5A] hover:bg-[#2A3E6A] text-white"
                   >
                     <Save className="mr-2 h-4 w-4" />
-                    Save Changes
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
+          </>
+        )}
       </main>
 
       <Footer />
