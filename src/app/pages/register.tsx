@@ -40,16 +40,24 @@ export function RegisterPage() {
       if (!response.ok) {
         toast.error('Google Sign-Up failed', {
           description: data.message || 'Could not authenticate with Google',
+          action: {
+            label: 'Close',
+            onClick: () => {},
+          },
         });
         return;
       }
 
       // Store token in localStorage
-      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
       toast.success('Account created successfully! 🎉', {
         description: 'Welcome! Redirecting to dashboard...',
+        action: {
+          label: 'Close',
+          onClick: () => {},
+        },
       });
       
       // Navigate to search after 1.5 seconds
@@ -65,6 +73,10 @@ export function RegisterPage() {
   const handleGoogleError = () => {
     toast.error('Google Sign-Up failed', {
       description: 'Failed to sign up with Google. Please try again.',
+      action: {
+        label: 'Close',
+        onClick: () => {},
+      },
     });
   };
 
@@ -82,22 +94,42 @@ export function RegisterPage() {
     
     // Validation
     if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
-      toast.error('All fields are required');
+      toast.error('All fields are required', {
+        action: {
+          label: 'Close',
+          onClick: () => {},
+        },
+      });
       return;
     }
 
     if (passwordStrength < 4) {
-      toast.error('Password does not meet requirements');
+      toast.error('Password does not meet requirements', {
+        action: {
+          label: 'Close',
+          onClick: () => {},
+        },
+      });
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error('Passwords do not match', {
+        action: {
+          label: 'Close',
+          onClick: () => {},
+        },
+      });
       return;
     }
 
     if (!formData.agreeToTerms) {
-      toast.error('Please agree to the terms and conditions');
+      toast.error('Please agree to the terms and conditions', {
+        action: {
+          label: 'Close',
+          onClick: () => {},
+        },
+      });
       return;
     }
 
@@ -123,6 +155,10 @@ export function RegisterPage() {
         console.error('❌ Registration error:', data.message);
         toast.error('Registration failed', {
           description: data.message || 'Something went wrong',
+          action: {
+            label: 'Close',
+            onClick: () => {},
+          },
         });
         setIsLoading(false);
         return;
@@ -131,6 +167,10 @@ export function RegisterPage() {
       console.log('✅ Registration successful for:', formData.email);
       toast.success('Account created successfully! 🎉', {
         description: `Welcome ${formData.fullName}! Redirecting to login...`,
+        action: {
+          label: 'Close',
+          onClick: () => {},
+        },
       });
       
       // Clear form
@@ -150,6 +190,10 @@ export function RegisterPage() {
       console.error('❌ Registration error:', error);
       toast.error('Registration failed', {
         description: 'Could not connect to server. Make sure backend is running on http://localhost:5000',
+        action: {
+          label: 'Close',
+          onClick: () => {},
+        },
       });
       setIsLoading(false);
     }

@@ -34,16 +34,24 @@ export function LoginPage() {
       if (!response.ok) {
         toast.error('Google Sign-In failed', {
           description: data.message || 'Could not authenticate with Google',
+          action: {
+            label: 'Close',
+            onClick: () => {},
+          },
         });
         return;
       }
 
       // Store token in localStorage
-      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      toast.success('Logged in successfully! 👋', {
+      const toastId = toast.success('Logged in successfully! 👋', {
         description: 'Welcome! Redirecting to dashboard...',
+        action: {
+          label: 'Close',
+          onClick: () => {},
+        },
       });
       
       // Navigate to search after 1.5 seconds
@@ -59,6 +67,10 @@ export function LoginPage() {
   const handleGoogleError = () => {
     toast.error('Google Sign-In failed', {
       description: 'Failed to sign in with Google. Please try again.',
+      action: {
+        label: 'Close',
+        onClick: () => {},
+      },
     });
   };
 
@@ -67,12 +79,22 @@ export function LoginPage() {
     
     // Validation
     if (!formData.email || !formData.password) {
-      toast.error('Email and password are required');
+      toast.error('Email and password are required', {
+        action: {
+          label: 'Close',
+          onClick: () => {},
+        },
+      });
       return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      toast.error('Please enter a valid email');
+      toast.error('Please enter a valid email', {
+        action: {
+          label: 'Close',
+          onClick: () => {},
+        },
+      });
       return;
     }
 
@@ -95,17 +117,25 @@ export function LoginPage() {
       if (!response.ok) {
         toast.error('Login failed', {
           description: data.message || 'Invalid email or password',
+          action: {
+            label: 'Close',
+            onClick: () => {},
+          },
         });
         setIsLoading(false);
         return;
       }
 
       // Store token in localStorage
-      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
       toast.success('Logged in successfully! 👋', {
         description: 'Welcome back! Redirecting to dashboard...',
+        action: {
+          label: 'Close',
+          onClick: () => {},
+        },
       });
       
       // Navigate to search after 1.5 seconds
@@ -114,6 +144,10 @@ export function LoginPage() {
       console.error('Login error:', error);
       toast.error('Login failed', {
         description: 'Could not connect to server. Make sure backend is running on http://localhost:5000',
+        action: {
+          label: 'Close',
+          onClick: () => {},
+        },
       });
       setIsLoading(false);
     }

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router';
 import { Search, SlidersHorizontal, Heart, X, ChevronDown } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -8,13 +8,13 @@ import { Card, CardContent } from '../components/ui/card';
 import { Slider } from '../components/ui/slider';
 import { Checkbox } from '../components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
 import { Navbar } from '../components/layout/navbar';
 import { Footer } from '../components/layout/footer';
-import { mockScholarships, mockSavedScholarships, mockUser } from '../lib/mock-data';
+import { mockScholarships, mockSavedScholarships } from '../lib/mock-data';
 import { toast } from 'sonner';
 
 export function SearchPage() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('relevance');
   const [gpaRange, setGpaRange] = useState([2.0, 4.0]);
@@ -22,17 +22,30 @@ export function SearchPage() {
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [savedScholarships, setSavedScholarships] = useState<string[]>(mockSavedScholarships);
   const [showFilters, setShowFilters] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+
+    if (!storedUser || !token) {
+      navigate('/login');
+      return;
+    }
+
+    setUser(JSON.parse(storedUser));
+  }, [navigate]);
 
   const scholarshipTypes = ['Merit', 'Need-based', 'Athletic', 'Government', 'Private'];
   const courses = ['All Programs', 'BS Computer Science', 'BS Engineering', 'BS Biology', 'BS Physics', 'BS Mathematics'];
 
   const getEligibilityStatus = (scholarship: any) => {
-    if (!mockUser.gpa || !mockUser.course) return 'partial';
+    if (!user || !user.GPA || !user.Course) return 'partial';
     
-    const meetsGPA = mockUser.gpa >= scholarship.gpaRequirement;
+    const meetsGPA = user.GPA >= scholarship.gpaRequirement;
     const meetsCourse = scholarship.eligibilityRequirements.courses.includes('All Programs') || 
-                        scholarship.eligibilityRequirements.courses.includes(mockUser.course || '');
-    const meetsYearLevel = scholarship.eligibilityRequirements.yearLevel.includes(mockUser.yearLevel || '');
+                        scholarship.eligibilityRequirements.courses.includes(user.Course || '');
+    const meetsYearLevel = scholarship.eligibilityRequirements.yearLevel.includes(user.YearLevel || '');
     
     if (meetsGPA && meetsCourse && meetsYearLevel) return 'eligible';
     if (!meetsGPA) return 'not-eligible';
@@ -168,23 +181,15 @@ export function SearchPage() {
             </div>
             
             <div className="flex gap-2">
-              {/* Mobile Filter Button */}
-              <Sheet open={showFilters} onOpenChange={setShowFilters}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" className="md:hidden flex-1">
-                    <SlidersHorizontal className="mr-2 h-4 w-4" />
-                    Filters
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="bottom" className="h-[80vh]">
-                  <SheetHeader>
-                    <SheetTitle>Filter Scholarships</SheetTitle>
-                  </SheetHeader>
-                  <div className="py-6 overflow-y-auto h-full">
-                    <FilterSection />
-                  </div>
-                </SheetContent>
-              </Sheet>
+              {/* Desktop Filter Button */}
+              <Button
+                variant={showFilters ? "default" : "outline"}
+                className="md:hidden flex-1"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                {showFilters ? 'Hide Filters' : 'Show Filters'}
+              </Button>
 
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-full md:w-[180px]">
@@ -232,10 +237,10 @@ export function SearchPage() {
           </div>
         </div>
 
-        <div className="flex gap-6">
-          {/* Desktop Filter Sidebar */}
-          <aside className="hidden md:block w-64 flex-shrink-0">
-            <Card className="sticky top-24">
+        <div className="flex gap-6 flex-col-reverse md:flex-row">
+          {/* Filter Sidebar - Desktop Always Visible, Mobile Toggleable */}
+          <aside className={`w-full md:w-64 flex-shrink-0 ${!showFilters && 'md:block hidden'}`}>
+            <Card className="md:sticky md:top-24">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-[#1A2E5A]">Filters</h3>

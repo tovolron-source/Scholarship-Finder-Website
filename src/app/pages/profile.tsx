@@ -46,9 +46,9 @@ export function ProfilePage() {
           if (data.success && data.user) {
             setUserData({
               id: data.user.id.toString(),
-              fullName: data.user.FullName || user.FullName || 'User',
-              email: data.user.Email || user.Email || '',
-              profilePhoto: data.user.ProfilePhoto,
+              fullName: data.user.FullName || user.FullName || 'Your Name',
+              email: data.user.Email || user.Email || 'your.email@example.com',
+              profilePhoto: data.user.ProfilePhoto || undefined,
               contactNumber: data.user.ContactNumber || '',
               school: data.user.School || '',
               course: data.user.Course || '',
@@ -62,9 +62,9 @@ export function ProfilePage() {
           // Use stored user data as fallback
           setUserData({
             id: user.id?.toString() || '1',
-            fullName: user.FullName || 'User',
-            email: user.Email || '',
-            profilePhoto: user.ProfilePhoto,
+            fullName: user.FullName || 'Your Name',
+            email: user.Email || 'your.email@example.com',
+            profilePhoto: user.ProfilePhoto || undefined,
             contactNumber: user.ContactNumber || '',
             school: user.School || '',
             course: user.Course || '',
@@ -228,6 +228,7 @@ export function ProfilePage() {
                       id="fullName"
                       value={userData.fullName}
                       onChange={(e) => setUserData({ ...userData, fullName: e.target.value })}
+                      placeholder="John Doe"
                     />
                   </div>
                   <div className="space-y-2">
@@ -237,6 +238,7 @@ export function ProfilePage() {
                       type="email"
                       value={userData.email}
                       onChange={(e) => setUserData({ ...userData, email: e.target.value })}
+                      placeholder="john.doe@example.com"
                     />
                   </div>
                   <div className="space-y-2">
@@ -317,8 +319,7 @@ export function ProfilePage() {
                       min="0"
                       max="4.0"
                       value={userData.gpa}
-                      onChange={(e) => setUserData({ ...userData, gpa: parseFloat(e.target.value) })}
-                      placeholder="3.5"
+                      onChange={(e) => setUserData({ ...userData, gpa: parseFloat(e.target.value) })}                      placeholder="3.5"                      placeholder="3.5"
                     />
                   </div>
                 </div>
