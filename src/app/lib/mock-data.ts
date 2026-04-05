@@ -56,21 +56,6 @@ export interface Notification {
   read: boolean;
 }
 
-// Mock current user
-export const mockUser: User = {
-  id: '1',
-  fullName: 'Sarah Johnson',
-  email: 'sarah.johnson@email.com',
-  profilePhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
-  contactNumber: '+1 234 567 8900',
-  school: 'State University',
-  course: 'BS Computer Science',
-  yearLevel: '2nd Year',
-  gpa: 3.5,
-  financialStatus: 'Middle Income',
-  profileCompletion: 75
-};
-
 // Mock scholarships
 export const mockScholarships: Scholarship[] = [
   {
@@ -274,40 +259,7 @@ export const mockApplications: Application[] = [
 ];
 
 // Mock notifications
-export const mockNotifications: Notification[] = [
-  {
-    id: 'notif1',
-    type: 'new',
-    title: 'New Scholarships Match Your Profile',
-    message: '5 new scholarships match your profile. Check them out now!',
-    timestamp: '2026-03-15T10:30:00',
-    read: false
-  },
-  {
-    id: 'notif2',
-    type: 'deadline',
-    title: 'Deadline Reminder',
-    message: 'DOST Scholarship deadline in 3 days',
-    timestamp: '2026-03-14T09:00:00',
-    read: false
-  },
-  {
-    id: 'notif3',
-    type: 'status',
-    title: 'Application Status Update',
-    message: 'Your Google Excellence Scholarship application has been reviewed',
-    timestamp: '2026-03-13T14:20:00',
-    read: true
-  },
-  {
-    id: 'notif4',
-    type: 'new',
-    title: 'New Scholarship Available',
-    message: 'Women in STEM Scholarship is now open for applications',
-    timestamp: '2026-03-12T11:00:00',
-    read: true
-  }
-];
+export const mockNotifications: Notification[] = [];
 
 // Mock saved scholarships
 export const mockSavedScholarships: string[] = ['1', '3', '6'];

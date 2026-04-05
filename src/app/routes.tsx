@@ -7,6 +7,7 @@ import { ProfilePage } from './pages/profile';
 import { ErrorPage } from './pages/error';
 import { NotFoundPage } from './pages/not-found';
 import { DesignSystemPage } from './pages/design-system';
+import { NotificationsPage } from './pages/notifications';
 
 export const router = createBrowserRouter([
     {
@@ -32,6 +33,11 @@ export const router = createBrowserRouter([
     {
         path: '/profile',
         Component: ProfilePage,
+        errorElement: <ErrorPage />,
+    },
+    {
+        path: '/notifications',
+        Component: NotificationsPage,
         errorElement: <ErrorPage />,
     },
 

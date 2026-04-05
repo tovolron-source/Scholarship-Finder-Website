@@ -111,9 +111,9 @@ export function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar>
-                      <AvatarImage src={user?.ProfilePhoto} alt={user?.FullName} />
+                      <AvatarImage src={user?.ProfilePhoto} alt={user?.Name || user?.FullName} />
                       <AvatarFallback className="bg-[#1A2E5A] text-white">
-                        {user?.FullName ? user.FullName.split(' ').map((n: string) => n[0]).join('') : 'U'}
+                        {(user?.Name || user?.FullName) ? (user.Name || user.FullName).split(' ').map((n: string) => n[0]).join('') : 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -121,7 +121,7 @@ export function Navbar() {
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{user?.FullName || 'User'}</p>
+                      <p className="text-sm font-medium">{user?.Name || user?.FullName || 'User'}</p>
                       <p className="text-xs text-muted-foreground">{user?.Email || ''}</p>
                     </div>
                   </div>

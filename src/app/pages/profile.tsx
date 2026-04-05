@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { Camera, Save } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -11,14 +11,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Navbar } from '../components/layout/navbar';
 import { Footer } from '../components/layout/footer';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { mockUser } from '../lib/mock-data';
 import { toast } from 'sonner';
 
 export function ProfilePage() {
   const navigate = useNavigate();
-  const [userData, setUserData] = useState(mockUser);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [userData, setUserData] = useState<any>({
+    id: '1',
+    fullName: 'Your Name',
+    email: 'your.email@example.com',
+    profilePhoto: undefined,
+    gender: '',
+    address: '',
+    contactNumber: '',
+    school: '',
+    course: '',
+    yearLevel: '',
+    gpa: 0,
+    financialStatus: 'Middle Income',
+    profileCompletion: 20
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -45,17 +61,33 @@ export function ProfilePage() {
           const data = await response.json();
           if (data.success && data.user) {
             setUserData({
-              id: data.user.id.toString(),
-              fullName: data.user.FullName || data.user.Name || user.FullName || 'Your Name',
+              id: data.user.id?.toString() || user.id?.toString() || '1',
+              fullName: data.user.FullName || data.user.Name || user.FullName || user.Name || 'Your Name',
               email: data.user.Email || user.Email || 'your.email@example.com',
-              profilePhoto: data.user.ProfilePhoto || undefined,
-              contactNumber: data.user.ContactNumber || '',
-              school: data.user.School || '',
-              course: data.user.Course || '',
-              yearLevel: data.user.YearLevel || '',
-              gpa: data.user.GPA || 0,
-              financialStatus: (data.user.FinancialStatus || 'Middle Income') as any,
-              profileCompletion: data.user.ProfileCompletion || 20
+              profilePhoto: data.user.profilePhoto ? `http://localhost:5000${data.user.profilePhoto}` : user.ProfilePhoto || undefined,
+              gender: data.user.gender ?? user.gender ?? user.Gender ?? '',
+              address: data.user.address ?? user.address ?? user.Address ?? '',
+              contactNumber: data.user.contactNumber ?? user.contactNumber ?? user.ContactNumber ?? '',
+              school: data.user.school ?? user.school ?? user.School ?? '',
+              course: data.user.course ?? user.course ?? user.Course ?? '',
+              yearLevel: data.user.yearLevel ?? user.yearLevel ?? user.YearLevel ?? '',
+              gpa: data.user.gpa ?? user.gpa ?? user.GPA ?? 0,
+              financialStatus: (data.user.financialStatus ?? user.financialStatus ?? user.FinancialStatus ?? 'Middle Income') as any,
+              profileCompletion: data.user.profileCompletion ?? user.profileCompletion ?? user.ProfileCompletion ?? 20
+            });
+          } else {
+            setUserData({
+              id: user.id?.toString() || '1',
+              fullName: user.FullName || user.Name || 'Your Name',
+              email: user.Email || 'your.email@example.com',
+              profilePhoto: user.ProfilePhoto || undefined,
+              contactNumber: user.ContactNumber || '',
+              school: user.School || '',
+              course: user.Course || '',
+              yearLevel: user.YearLevel || '',
+              gpa: user.GPA ?? 0,
+              financialStatus: (user.FinancialStatus || 'Middle Income') as any,
+              profileCompletion: user.ProfileCompletion ?? 20
             });
           }
         } else {
@@ -64,14 +96,16 @@ export function ProfilePage() {
             id: user.id?.toString() || '1',
             fullName: user.FullName || user.Name || 'Your Name',
             email: user.Email || 'your.email@example.com',
-            profilePhoto: user.ProfilePhoto || undefined,
-            contactNumber: user.ContactNumber || '',
-            school: user.School || '',
-            course: user.Course || '',
-            yearLevel: user.YearLevel || '',
-            gpa: user.GPA || 0,
-            financialStatus: (user.FinancialStatus || 'Middle Income') as any,
-            profileCompletion: user.ProfileCompletion || 20
+            profilePhoto: user.ProfilePhoto || user.profilePhoto || undefined,
+            gender: user.gender || user.Gender || '',
+            address: user.address || user.Address || '',
+            contactNumber: user.contactNumber || user.ContactNumber || '',
+            school: user.school || user.School || '',
+            course: user.course || user.Course || '',
+            yearLevel: user.yearLevel || user.YearLevel || '',
+            gpa: user.gpa ?? user.GPA ?? 0,
+            financialStatus: (user.financialStatus || user.FinancialStatus || 'Middle Income') as any,
+            profileCompletion: user.profileCompletion ?? user.ProfileCompletion ?? 20
           });
         }
       } catch (error) {
@@ -85,7 +119,71 @@ export function ProfilePage() {
     fetchUserData();
   }, [navigate]);
 
-  const handleSave = async (section: string) => {
+  const handlePhotoUpload = async () => {
+    if (!selectedFile) return;
+
+    setUploadingPhoto(true);
+    try {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+
+      if (!storedUser || !token) {
+        navigate('/login');
+        return;
+      }
+
+      const user = JSON.parse(storedUser);
+      const userId = user.id;
+
+      const formData = new FormData();
+      formData.append('profilePhoto', selectedFile);
+
+      const response = await fetch(`http://localhost:5000/api/auth/upload-profile-photo/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Update local state
+          setUserData((prev: any) => ({
+            ...prev,
+            profilePhoto: `http://localhost:5000${data.profilePhoto}`
+          }));
+
+          // Update stored user data
+          const updatedUser = {
+            ...user,
+            ProfilePhoto: `http://localhost:5000${data.profilePhoto}`
+          };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+
+          toast.success('Profile photo uploaded successfully!');
+          setSelectedFile(null);
+        }
+      } else {
+        toast.error('Failed to upload profile photo');
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      toast.error('An error occurred while uploading');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleSave = async () => {
     setIsSaving(true);
     try {
       const token = localStorage.getItem('token');
@@ -99,6 +197,8 @@ export function ProfilePage() {
       const user = JSON.parse(storedUser);
       const userId = user.id;
 
+      const profilePhotoPath = userData.profilePhoto?.replace('http://localhost:5000', '');
+
       const response = await fetch(`http://localhost:5000/api/auth/user/${userId}`, {
         method: 'PUT',
         headers: {
@@ -107,13 +207,16 @@ export function ProfilePage() {
         },
         body: JSON.stringify({
           fullName: userData.fullName,
+          email: userData.email,
+          gender: userData.gender,
+          address: userData.address,
           contactNumber: userData.contactNumber,
           school: userData.school,
           course: userData.course,
           yearLevel: userData.yearLevel,
-          gpa: userData.gpa,
+          gpa: Number.isFinite(userData.gpa) ? userData.gpa : undefined,
           financialStatus: userData.financialStatus,
-          profilePhoto: userData.profilePhoto,
+          profilePhoto: profilePhotoPath,
           profileCompletion: Math.min(
             userData.profileCompletion + 10,
             100
@@ -125,27 +228,53 @@ export function ProfilePage() {
         const data = await response.json();
         if (data.success) {
           // Update stored user data
+          const remoteProfilePhoto = data.user.profilePhoto ? `http://localhost:5000${data.user.profilePhoto}` : userData.profilePhoto;
           const updatedUser = {
             ...user,
             FullName: data.user.FullName,
-            ContactNumber: data.user.ContactNumber,
-            School: data.user.School,
-            Course: data.user.Course,
-            YearLevel: data.user.YearLevel,
-            GPA: data.user.GPA,
-            FinancialStatus: data.user.FinancialStatus,
-            ProfilePhoto: data.user.ProfilePhoto,
-            ProfileCompletion: data.user.ProfileCompletion
+            Name: data.user.Name || user.Name,
+            Email: data.user.Email || user.Email,
+            gender: data.user.gender,
+            Gender: data.user.gender,
+            address: data.user.address,
+            Address: data.user.address,
+            contactNumber: data.user.contactNumber,
+            ContactNumber: data.user.contactNumber,
+            school: data.user.school,
+            School: data.user.school,
+            course: data.user.course,
+            Course: data.user.course,
+            yearLevel: data.user.yearLevel,
+            YearLevel: data.user.yearLevel,
+            gpa: data.user.gpa,
+            GPA: data.user.gpa,
+            financialStatus: data.user.financialStatus,
+            FinancialStatus: data.user.financialStatus,
+            profilePhoto: remoteProfilePhoto,
+            ProfilePhoto: remoteProfilePhoto,
+            profileCompletion: data.user.profileCompletion,
+            ProfileCompletion: data.user.profileCompletion
           };
           localStorage.setItem('user', JSON.stringify(updatedUser));
           
           // Update state
           setUserData({
             ...userData,
-            profileCompletion: data.user.ProfileCompletion
+            fullName: data.user.FullName || data.user.Name || userData.fullName,
+            email: data.user.Email || userData.email,
+            gender: data.user.gender || userData.gender,
+            address: data.user.address || userData.address,
+            contactNumber: data.user.contactNumber || userData.contactNumber,
+            school: data.user.school || userData.school,
+            course: data.user.course || userData.course,
+            yearLevel: data.user.yearLevel || userData.yearLevel,
+            gpa: data.user.gpa !== undefined ? data.user.gpa : userData.gpa,
+            financialStatus: data.user.financialStatus || userData.financialStatus,
+            profileCompletion: data.user.profileCompletion !== undefined ? data.user.profileCompletion : userData.profileCompletion,
+            profilePhoto: remoteProfilePhoto
           });
           
-          toast.success(`${section} updated successfully!`);
+          toast.success('Profile updated successfully!');
         }
       } else {
         toast.error('Failed to update profile');
@@ -178,12 +307,22 @@ export function ProfilePage() {
                   <Avatar className="h-24 w-24">
                     <AvatarImage src={userData.profilePhoto} alt={userData.fullName} />
                     <AvatarFallback className="bg-[#1A2E5A] text-white text-2xl">
-                      {userData.fullName.split(' ').map(n => n[0]).join('')}
+                      {userData.fullName.split(' ').map((n: string) => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
-                  <button className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  >
                     <Camera className="h-6 w-6 text-white" />
                   </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
                 </div>
 
                 <div className="flex-1">
@@ -205,7 +344,47 @@ export function ProfilePage() {
             </CardContent>
           </Card>
         </div>
-
+        {/* Photo Upload Section */}
+        {selectedFile && (
+          <div className="mb-6">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={URL.createObjectURL(selectedFile)}
+                      alt="Selected"
+                      className="h-12 w-12 rounded-full object-cover"
+                    />
+                    <div>
+                      <p className="text-sm font-medium">{selectedFile.name}</p>
+                      <p className="text-xs text-[#64748B]">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedFile(null)}
+                      disabled={uploadingPhoto}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handlePhotoUpload}
+                      disabled={uploadingPhoto}
+                    >
+                      {uploadingPhoto ? 'Uploading...' : 'Upload'}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
         {/* Profile Sections */}
         <Tabs defaultValue="personal" className="space-y-6">
           <TabsList className="w-full justify-start overflow-x-auto">
@@ -250,11 +429,37 @@ export function ProfilePage() {
                       placeholder="+1 234 567 8900"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender</Label>
+                    <Select
+                      value={userData.gender}
+                      onValueChange={(value) => setUserData({ ...userData, gender: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      value={userData.address}
+                      onChange={(e) => setUserData({ ...userData, address: e.target.value })}
+                      placeholder="123 Main Street, City, State, ZIP"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex justify-end pt-4">
                   <Button 
-                    onClick={() => handleSave('Personal information')}
+                    onClick={handleSave}
                     disabled={isSaving}
                     className="bg-[#1A2E5A] hover:bg-[#2A3E6A] text-white"
                   >
@@ -319,7 +524,8 @@ export function ProfilePage() {
                       min="0"
                       max="4.0"
                       value={userData.gpa}
-                      onChange={(e) => setUserData({ ...userData, gpa: parseFloat(e.target.value) })}                      placeholder="3.5"                      placeholder="3.5"
+                      onChange={(e) => setUserData({ ...userData, gpa: parseFloat(e.target.value) })}
+                      placeholder="3.5"
                     />
                   </div>
                 </div>
@@ -342,7 +548,7 @@ export function ProfilePage() {
 
                 <div className="flex justify-end pt-4">
                   <Button 
-                    onClick={() => handleSave('Academic information')}
+                    onClick={handleSave}
                     disabled={isSaving}
                     className="bg-[#1A2E5A] hover:bg-[#2A3E6A] text-white"
                   >
@@ -393,7 +599,7 @@ export function ProfilePage() {
 
                 <div className="flex justify-end pt-4">
                   <Button 
-                    onClick={() => handleSave('Financial information')}
+                    onClick={handleSave}
                     disabled={isSaving}
                     className="bg-[#1A2E5A] hover:bg-[#2A3E6A] text-white"
                   >
@@ -405,7 +611,18 @@ export function ProfilePage() {
             </Card>
           </TabsContent>
         </Tabs>
-          </>
+
+          <div className="flex justify-end mt-6">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="bg-[#1A2E5A] hover:bg-[#2A3E6A] text-white"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {isSaving ? 'Saving profile...' : 'Save all profile changes'}
+            </Button>
+          </div>
+        </>
         )}
       </main>
 
