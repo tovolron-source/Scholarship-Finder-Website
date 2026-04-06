@@ -12,6 +12,7 @@ import { Navbar } from '../components/layout/navbar';
 import { Footer } from '../components/layout/footer';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { toast } from 'sonner';
+import { throttle } from '../lib/debounce';
 
 export function ProfilePage() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export function ProfilePage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false); // Prevent multiple concurrent saves
   const [userData, setUserData] = useState<any>({
     id: '1',
     fullName: 'Your Name',
@@ -122,6 +124,9 @@ export function ProfilePage() {
   const handlePhotoUpload = async () => {
     if (!selectedFile) return;
 
+    // Prevent multiple concurrent uploads
+    if (uploadingPhoto) return;
+
     setUploadingPhoto(true);
     try {
       const token = localStorage.getItem('token');
@@ -158,15 +163,19 @@ export function ProfilePage() {
           // Update stored user data
           const updatedUser = {
             ...user,
-            ProfilePhoto: `http://localhost:5000${data.profilePhoto}`
+            ProfilePhoto: `http://localhost:5000${data.profilePhoto}`,
+            profilePhoto: `http://localhost:5000${data.profilePhoto}`
           };
           localStorage.setItem('user', JSON.stringify(updatedUser));
 
           toast.success('Profile photo uploaded successfully!');
           setSelectedFile(null);
+        } else {
+          toast.error(data.message || 'Failed to upload profile photo');
         }
       } else {
-        toast.error('Failed to upload profile photo');
+        const errorData = await response.json().catch(() => ({}));
+        toast.error(errorData.message || 'Failed to upload profile photo');
       }
     } catch (error) {
       console.error('Error uploading photo:', error);
@@ -184,6 +193,24 @@ export function ProfilePage() {
   };
 
   const handleSave = async () => {
+    // Prevent multiple concurrent save attempts
+    if (savingRef.current || isSaving) {
+      console.warn('Save already in progress');
+      return;
+    }
+
+    // Validation
+    if (!userData.fullName || userData.fullName.trim() === '') {
+      toast.error('Full name is required');
+      return;
+    }
+
+    if (!userData.email || userData.email.trim() === '') {
+      toast.error('Email is required');
+      return;
+    }
+
+    savingRef.current = true;
     setIsSaving(true);
     try {
       const token = localStorage.getItem('token');
@@ -226,41 +253,43 @@ export function ProfilePage() {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.success) {
-          // Update stored user data
+        if (data.success && data.user) {
+          // Update stored user data with response data
           const remoteProfilePhoto = data.user.profilePhoto ? `http://localhost:5000${data.user.profilePhoto}` : userData.profilePhoto;
           const updatedUser = {
             ...user,
-            FullName: data.user.FullName,
-            Name: data.user.Name || user.Name,
-            Email: data.user.Email || user.Email,
-            gender: data.user.gender,
-            Gender: data.user.gender,
-            address: data.user.address,
-            Address: data.user.address,
-            contactNumber: data.user.contactNumber,
-            ContactNumber: data.user.contactNumber,
-            school: data.user.school,
-            School: data.user.school,
-            course: data.user.course,
-            Course: data.user.course,
-            yearLevel: data.user.yearLevel,
-            YearLevel: data.user.yearLevel,
-            gpa: data.user.gpa,
-            GPA: data.user.gpa,
-            financialStatus: data.user.financialStatus,
-            FinancialStatus: data.user.financialStatus,
+            fullName: data.user.fullName || userData.fullName,
+            FullName: data.user.fullName || userData.fullName,
+            Name: data.user.Name || userData.fullName || user.Name,
+            Email: data.user.Email || userData.email,
+            email: data.user.Email || userData.email,
+            gender: data.user.gender || userData.gender,
+            Gender: data.user.gender || userData.gender,
+            address: data.user.address || userData.address,
+            Address: data.user.address || userData.address,
+            contactNumber: data.user.contactNumber || userData.contactNumber,
+            ContactNumber: data.user.contactNumber || userData.contactNumber,
+            school: data.user.school || userData.school,
+            School: data.user.school || userData.school,
+            course: data.user.course || userData.course,
+            Course: data.user.course || userData.course,
+            yearLevel: data.user.yearLevel || userData.yearLevel,
+            YearLevel: data.user.yearLevel || userData.yearLevel,
+            gpa: data.user.gpa !== undefined ? data.user.gpa : userData.gpa,
+            GPA: data.user.gpa !== undefined ? data.user.gpa : userData.gpa,
+            financialStatus: data.user.financialStatus || userData.financialStatus,
+            FinancialStatus: data.user.financialStatus || userData.financialStatus,
             profilePhoto: remoteProfilePhoto,
             ProfilePhoto: remoteProfilePhoto,
-            profileCompletion: data.user.profileCompletion,
-            ProfileCompletion: data.user.profileCompletion
+            profileCompletion: data.user.profileCompletion !== undefined ? data.user.profileCompletion : userData.profileCompletion,
+            ProfileCompletion: data.user.profileCompletion !== undefined ? data.user.profileCompletion : userData.profileCompletion
           };
           localStorage.setItem('user', JSON.stringify(updatedUser));
           
-          // Update state
+          // Update state with response data
           setUserData({
-            ...userData,
-            fullName: data.user.FullName || data.user.Name || userData.fullName,
+            id: data.user.id?.toString() || userData.id,
+            fullName: data.user.fullName || userData.fullName,
             email: data.user.Email || userData.email,
             gender: data.user.gender || userData.gender,
             address: data.user.address || userData.address,
@@ -275,14 +304,18 @@ export function ProfilePage() {
           });
           
           toast.success('Profile updated successfully!');
+        } else {
+          toast.error(data.message || 'Failed to update profile');
         }
       } else {
-        toast.error('Failed to update profile');
+        const errorData = await response.json().catch(() => ({}));
+        toast.error(errorData.message || 'Failed to update profile');
       }
     } catch (error) {
       console.error('Error saving profile:', error);
       toast.error('An error occurred while saving');
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   };
@@ -328,6 +361,28 @@ export function ProfilePage() {
                 <div className="flex-1">
                   <h1 className="text-2xl font-semibold text-[#1A2E5A] mb-1">{userData.fullName}</h1>
                   <p className="text-[#64748B] mb-4">{userData.email}</p>
+                  
+                  {/* Quick Info Grid */}
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    {userData.gender && (
+                      <div>
+                        <p className="text-xs text-[#64748B] mb-1">Gender</p>
+                        <p className="text-sm font-semibold text-[#1A2E5A]">{userData.gender}</p>
+                      </div>
+                    )}
+                    {userData.gpa && Number.isFinite(userData.gpa) && userData.gpa > 0 && (
+                      <div>
+                        <p className="text-xs text-[#64748B] mb-1">GPA</p>
+                        <p className="text-sm font-semibold text-[#1A2E5A]">{Number(userData.gpa).toFixed(2)} / 4.0</p>
+                      </div>
+                    )}
+                    {userData.address && (
+                      <div>
+                        <p className="text-xs text-[#64748B] mb-1">Address</p>
+                        <p className="text-sm font-semibold text-[#1A2E5A] truncate">{userData.address}</p>
+                      </div>
+                    )}
+                  </div>
                   
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">

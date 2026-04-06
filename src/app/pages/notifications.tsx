@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Check, CheckCheck, Sparkles, Clock, AlertCircle } from 'lucide-react';
+import { Bell, CheckCheck, Sparkles, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent } from '../components/ui/card';
@@ -24,10 +24,8 @@ export function NotificationsPage() {
     }
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(notifications.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ));
+  const dismissNotification = (id: string) => {
+    setNotifications(notifications.filter(n => n.id !== id));
   };
 
   const markAllAsRead = () => {
@@ -98,7 +96,8 @@ export function NotificationsPage() {
               {notifications.map((notification) => (
                 <Card 
                   key={notification.id} 
-                  className={`transition-all ${
+                  onClick={() => dismissNotification(notification.id)}
+                  className={`transition-all cursor-pointer hover:shadow-md ${
                     notification.read 
                       ? 'bg-white' 
                       : 'bg-blue-50 border-l-4 border-l-[#1A2E5A]'
@@ -106,7 +105,7 @@ export function NotificationsPage() {
                 >
                   <CardContent className="p-5">
                     <div className="flex items-start gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
                         notification.type === 'new' ? 'bg-[#F5A623]/10' :
                         notification.type === 'deadline' ? 'bg-[#E67E22]/10' :
                         'bg-[#2ECC71]/10'
@@ -130,17 +129,9 @@ export function NotificationsPage() {
                           <span className="text-xs text-[#64748B]">
                             {getTimeAgo(notification.timestamp)}
                           </span>
-                          {!notification.read && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => markAsRead(notification.id)}
-                              className="text-xs h-7"
-                            >
-                              <Check className="mr-1 h-3 w-3" />
-                              Mark as read
-                            </Button>
-                          )}
+                          <span className="text-xs text-[#64748B] italic">
+                            Click to dismiss
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -162,7 +153,7 @@ export function NotificationsPage() {
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#1A2E5A]/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1A2E5A]"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#1A2E5A]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1A2E5A]"></div>
                   </label>
                 </div>
 
@@ -173,7 +164,7 @@ export function NotificationsPage() {
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#1A2E5A]/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1A2E5A]"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#1A2E5A]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1A2E5A]"></div>
                   </label>
                 </div>
 
@@ -184,7 +175,7 @@ export function NotificationsPage() {
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#1A2E5A]/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1A2E5A]"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#1A2E5A]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1A2E5A]"></div>
                   </label>
                 </div>
               </div>
